@@ -6,8 +6,14 @@ const {prepareData} = require("./prepareData");
 const fileName = ['a_an_example.in.txt', 'b_better_start_small.in.txt', 'c_collaboration.in.txt', 'd_dense_schedule.in.txt', 'e_exceptional_skills.in.txt', 'f_find_great_mentors.in.txt']
 
 const findPerson = ({ people, projectSkill, levelSkill }) => {
+    return people.find(({ skills, occupied }) => skills.find(({ skill, level }) => {
+        return skill === projectSkill && level >= levelSkill && occupied < 5
+    }))
+}
+
+const findJunior = ({ people, projectSkill, levelSkill }) => {
     return people.find(({ skills }) => skills.find(({ skill, level }) => {
-        return skill === projectSkill && level >= levelSkill
+        return skill === projectSkill && level === levelSkill - 1
     }))
 }
 
@@ -24,7 +30,7 @@ fileName.forEach(file => {
 
     orderProjects.forEach(project => {
         const finalProject = {name: project.name, people: []}
-        const juniors = []
+        const juniorSkills = []
         const interns = []
         project.skills.forEach(({ skill: projectSkill, level: levelSkill }) => {
             let person
@@ -32,11 +38,13 @@ fileName.forEach(file => {
             if (alreadyInProject) {
                 if (levelSkill === 1) {
                     person = findIntern({ people: contributors, projectSkill })
-                    interns.push({ intern: person, skill: projectSkill, level: 0})
+                    interns.push({ intern: person, skill: projectSkill })
                 } else {
-                    person = findPerson({ people: contributors, projectSkill, levelSkill: levelSkill - 1 })
-                    const juniorSkill = person.skills.find(skill => skill.skill === projectSkill)
-                    juniors.push({ junior: person, skill: juniorSkill.skill, level: juniorSkill.level })
+                    person = findJunior({ people: contributors, projectSkill, levelSkill })
+                    if (person) {
+                        const juniorSkill = person.skills.find(skill => skill.skill === projectSkill)
+                        juniorSkills.push(juniorSkill)
+                    }
                 }
             } else {
                 person = findPerson({ people: contributors, projectSkill, levelSkill })
@@ -47,11 +55,14 @@ fileName.forEach(file => {
         })
         if (project.skills.length === finalProject.people.length) {
             finalProjects.push({name: finalProject.name, people: finalProject.people.map(({ name }) => name)})
-            juniors.forEach(({ junior }) => {
-                junior.level += 1
+            juniorSkills.forEach(skill => {
+                skill.level += 1
             })
-            interns.forEach(({ intern }) => {
-                intern.level += 1
+            interns.forEach(({ intern, skill }) => {
+                intern.skills.push({ skill, level: 1})
+            })
+            finalProject.people.forEach(p => {
+                p.occupied = (p.occupied || 0) + 1
             })
         }
     })
