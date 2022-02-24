@@ -1,68 +1,40 @@
 const _ = require("lodash");
-const {headData, bodyData, writeFile} = require("./utils");
-
-// preproessing data specific problem
-const [R, C, L, H] = headData.split(" ").map(h => parseInt(h));
-const data = bodyData.map(d => d.split(""));
-const N = 10000000;
+const {writeFile} = require("./utils");
+const {prepareData} = require("./prepareData");
 
 
-// solution
-// "str1,str2,str3,str4".match(/T/g) || []).length
+const fileName = ['a_an_example.in.txt', 'b_better_start_small.in.txt', 'c_collaboration.in.txt', 'd_dense_schedule.in.txt', 'e_exceptional_skills.in.txt', 'f_find_great_mentors.in.txt']
 
-// FIXME corregir a tamaños rectangulares menores que H
-const divisors = n => [...Array(n + 1).keys()].slice(1).filter(o => (!(n % o)));
-const possibleShapes = divisors => divisors.map((d, i) => [d, divisors[divisors.length - 1 - i]]);
+fileName.forEach(file => {
+    const { contributors, projects } = prepareData(file)
+    _.orderBy(projects, ['scorer'], ['desc']);
+    const finalProjects = []
 
-const POSSIBLE_SHAPES = possibleShapes(divisors(H));
+    projects.forEach(project => {
+        const finalProject = {name: project.name, people: []}
+        project.skills.forEach(({ skill: projectSkill, level: levelSkill }) => {
+            const person = contributors.find(({ skills, name, occupied }) => skills.find(({ skill, level }) => {
+                return skill === projectSkill && level >= levelSkill && !occupied
+            }))
+            if (person) {
+                person.occupied = true
+                finalProject.people.push(person.name)
+            }
+        })
+        if (project.skills.length === finalProject.people.length) {
+            finalProjects.push(finalProject)
+        }
+    })
 
-
-function getRandomInt(min, max) {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-let numberOfSlices = 0;
-let coordinatesOfSlices = [];
-
-
-[...Array(N)].map(() => {
-
-  // const data = _.cloneDeep(constData);
-
-  // generate random values
-  // shape of slice
-  const shape = POSSIBLE_SHAPES[getRandomInt(0, POSSIBLE_SHAPES.length - 1)];
-  // const shape = POSSIBLE_SHAPES[1];
-
-  // random row
-  const r = getRandomInt(0, Math.max(R - 1 - shape[0], 0));
-  // random column
-  const c = getRandomInt(0, Math.max(C - 1 - shape[1], 0));
-
-
-  const checkNumberOfLetter = letter => [...Array(shape[0])].map((v, i) => {
-    return _.countBy(data[r + i].slice(c, c + shape[1]), l => l === letter).true || 0;
-  }).reduce((a, b) => {
-    return a + b;
-  });
-
-  // update used cells to 1
-  if (checkNumberOfLetter('T') >= L && checkNumberOfLetter('M') >= L && checkNumberOfLetter(1) === 0) {
-    [...Array(shape[0])].forEach((v, row) => {
-      [...Array(shape[1])].forEach((v, column) => {
-        data[r + row][c + column] = 1;
-      })
-    });
-
-    // update results
-    numberOfSlices++;
-    coordinatesOfSlices += [r, c, r + shape[0] - 1, c + shape[1] - 1].join(" ") + "\n";
-  }
-
-});
-
+// first line, number of executed projects
+// E sections, name of the project, then another line with contributors in the same order
 
 // escribir respuesta
-writeFile(numberOfSlices + "\n" + coordinatesOfSlices);
+    let answer = finalProjects.length + "\n"
+    finalProjects.forEach(fp => {
+        answer += fp.name + "\n"
+        answer += fp.people.join(' ') + "\n"
+    })
+    writeFile(answer, file);
+
+})
