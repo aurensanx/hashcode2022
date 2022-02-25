@@ -6,8 +6,8 @@ const {prepareData} = require("./prepareData");
 const fileName = ['a_an_example.in.txt', 'b_better_start_small.in.txt', 'c_collaboration.in.txt', 'd_dense_schedule.in.txt', 'e_exceptional_skills.in.txt', 'f_find_great_mentors.in.txt']
 
 const findPerson = ({ people, projectSkill, levelSkill }) => {
-    return people.find(({ skills, occupied }) => skills.find(({ skill, level }) => {
-        return skill === projectSkill && level >= levelSkill && occupied < 5
+    return people.find(({ skills }) => skills.find(({ skill, level }) => {
+        return skill === projectSkill && level >= levelSkill
     }))
 }
 
@@ -25,7 +25,7 @@ const findIntern = ({ people, projectSkill }) => {
 
 fileName.forEach(file => {
     const { contributors, projects } = prepareData(file)
-    const orderProjects = _.orderBy(projects, ['best', 'score', 'days'], ['asc', 'desc', 'asc']);
+    const orderProjects = _.orderBy(projects, ['roles', 'best', 'score', 'days'], ['asc', 'asc', 'desc', 'asc']);
     const finalProjects = []
 
     orderProjects.forEach(project => {
